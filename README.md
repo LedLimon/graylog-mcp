@@ -14,7 +14,7 @@ A minimal MCP (Model Context Protocol) server in JavaScript that integrates with
 ## Installation
 
 ```bash
-git clone git@github.com:lcaliani/graylog-mcp.git
+git clone git@github.com:LedLimon/graylog-mcp.git
 cd graylog-mcp
 npm install
 ```
@@ -50,6 +50,24 @@ Example config in **Cursor**:
       "env": {
         "BASE_URL": "http://your.graylog.server.net.br:9000",
         "API_TOKEN": "your_graylog_api_token"
+      }
+    }
+  }
+}
+```
+OR
+```json
+{
+  "mcpServers": {
+    "simple-graylog-mcp": {
+      "command": "node",
+      "args": [
+        "/path/to/graylog-mcp/src/index.js"
+      ],
+      "env": {
+        "BASE_URL": "http://your.graylog.server.net.br:9000",
+        "GRAYLOG_USERNAME": "your_login",
+        "GRAYLOG_PASSWORD": "your_password"
       }
     }
   }
