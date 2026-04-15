@@ -50,6 +50,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
             },
             {
+                name: "build_search_url",
+                description: "Build a Graylog web UI search URL with an absolute time range. Returns a clickable link — no API call is made.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        query: {
+                            type: "string",
+                            description: "Elasticsearch query string (e.g. 'level:3 AND \"some error text\"')",
+                        },
+                        from: {
+                            type: "string",
+                            description: "Start of time range, ISO-8601 (e.g. '2026-04-15T10:00:00.000Z'). Taken from effective_timerange.from returned by fetch_graylog_messages.",
+                        },
+                        to: {
+                            type: "string",
+                            description: "End of time range, ISO-8601 (e.g. '2026-04-15T11:00:00.000Z'). Taken from effective_timerange.to returned by fetch_graylog_messages.",
+                        },
+                        streamId: {
+                            type: "string",
+                            description: "Graylog stream ID. If omitted, no stream filter is applied.",
+                        },
+                    },
+                    required: ["query", "from", "to"],
+                },
+            },
+            {
                 name: "count_graylog_messages",
                 description: "Count messages in Graylog by level for a given stream and time range. Returns counts for ERROR (level 3) and WARN (level 4).",
                 inputSchema: {
@@ -73,6 +99,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (request.params.name === "fetch_graylog_messages") {
         return fetchGraylogMessages(request);
+    }
+    if (request.params.name === "build_search_url") {
+        return buildSearchUrl(request);
     }
     if (request.params.name === "count_graylog_messages") {
         return countGraylogMessages(request);
@@ -153,6 +182,28 @@ async function executeViewsSearch(queryString, timeRangeSeconds, streamId, limit
         messages: (stResult.messages ?? []).map((m) => m.message),
         effective_timerange: status?.results?.q1?.execution_stats?.effective_timerange ?? null,
         errors: status?.results?.q1?.errors ?? [],
+    };
+}
+
+function buildSearchUrl(request) {
+    const query = request.params.arguments?.query ?? "*";
+    const from = request.params.arguments?.from;
+    const to = request.params.arguments?.to;
+    const streamId = request.params.arguments?.streamId;
+
+    const params = new URLSearchParams({
+        q: query,
+        rangetype: "absolute",
+        from,
+        to,
+    });
+    if (streamId) {
+        params.set("streams", streamId);
+    }
+
+    const url = `${getBaseUrl()}/search?${params.toString()}`;
+    return {
+        content: [{ type: "text", text: url }],
     };
 }
 
